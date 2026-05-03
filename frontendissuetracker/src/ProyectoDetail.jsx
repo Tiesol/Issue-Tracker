@@ -1,8 +1,11 @@
 import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import TicketFormModal from "./components/TicketFormModal";
+import { useNavigate, useParams } from "react-router-dom";
+import AssignUserModal from "./components/AssignUserModal";
+import ProjectHeader from "./components/ProjectHeader";
 import TicketDetailModal from "./components/TicketDetailModal";
+import TicketFormModal from "./components/TicketFormModal";
+import TicketsBoard from "./components/TicketsBoard";
 
 const ProyectoDetail = () => {
     const [proyecto, setProyecto] = useState(null);
@@ -14,6 +17,10 @@ const ProyectoDetail = () => {
     const [detailTicketError, setDetailTicketError] = useState("");
     const [createTicketError, setCreateTicketError] = useState("");
     const [editTicketError, setEditTicketError] = useState("");
+    const [assignUserError, setAssignUserError] = useState("");
+    const [assignUserSuccess, setAssignUserSuccess] = useState("");
+    const [assignUserLoading, setAssignUserLoading] = useState(false);
+    const [assignUserReset, setAssignUserReset] = useState(0);
     const navigate = useNavigate();
     const { id } = useParams();
 
@@ -110,6 +117,12 @@ const ProyectoDetail = () => {
         navigate("/login", { replace: true });
     };
 
+    const handleOpenAssignUser = () => {
+        setAssignUserError("");
+        setAssignUserSuccess("");
+        setAssignUserReset((prev) => prev + 1);
+    };
+
     const handleCrearTicket = async (payload) => {
         setCreateTicketError("");
         try {
@@ -133,6 +146,48 @@ const ProyectoDetail = () => {
                 "Error al crear ticket";
             setCreateTicketError(message);
             console.error("Error al crear ticket:", error);
+        }
+    };
+
+    const handleAsignarUsuario = async (email) => {
+        setAssignUserError("");
+        setAssignUserSuccess("");
+        setAssignUserLoading(true);
+
+        try {
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/proyectos/${id}/asignar`,
+                { email },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            setAssignUserSuccess(response.data?.message || "Usuario asignado correctamente");
+            setProyecto((prev) => {
+                if (!prev) return prev;
+                const nuevoMiembro = response.data?.usuario;
+                if (!nuevoMiembro) return prev;
+                const miembrosActuales = prev.miembros || [];
+                const yaExiste = miembrosActuales.some((miembro) => miembro.id === nuevoMiembro.id);
+                if (yaExiste) return prev;
+                return { ...prev, miembros: [...miembrosActuales, nuevoMiembro] };
+            });
+            const closeButton = document.getElementById("btnCerrarAsignarUsuario");
+            if (closeButton) {
+                closeButton.click();
+            }
+        } catch (error) {
+            if (error.response && error.response.status === 401) {
+                handleUnauthorized();
+                return;
+            }
+            const message =
+                error.response?.data?.message ||
+                error.response?.data?.error ||
+                "Error al asignar usuario";
+            setAssignUserError(message);
+            console.error("Error al asignar usuario:", error);
+        } finally {
+            setAssignUserLoading(false);
         }
     };
 
@@ -239,117 +294,28 @@ const ProyectoDetail = () => {
 
     return (
         <div className="container mt-5">
-            <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start mb-4 gap-3">
-                <div>
-                    <div className="d-flex align-items-center gap-2 mb-2">
-                        <h2 className="fw-bold m-0">{proyecto.nombre}</h2>
-                        {esPropietario ? (
-                            <span className="badge bg-primary">Propietario</span>
-                        ) : (
-                            <span className="badge bg-secondary">Invitado</span>
-                        )}
-                    </div>
-                    <p className="text-muted mb-2">{proyecto.descripcion}</p>
-                    <small className="text-muted">
-                        Creado: {proyecto.createdAt ? new Date(proyecto.createdAt).toLocaleDateString() : "Sin fecha"}
-                    </small>
-                </div>
-                <div className="d-flex gap-2">
-                    <Link to="/proyectos" className="btn btn-outline-secondary">
-                        Volver
-                    </Link>
-                    <button
-                        className="btn btn-success"
-                        data-bs-toggle="modal"
-                        data-bs-target="#crearTicketModal"
-                        onClick={() => {
-                            setCreateTicketError("");
-                            setSelectedTicket(null);
-                            setCreateFormReset((prev) => prev + 1);
-                        }}
-                    >
-                        + Nuevo Ticket
-                    </button>
-                </div>
-            </div>
+            <ProjectHeader
+                proyecto={proyecto}
+                esPropietario={esPropietario}
+                onAssignUser={esPropietario ? handleOpenAssignUser : null}
+                onNewTicket={() => {
+                    setCreateTicketError("");
+                    setSelectedTicket(null);
+                    setCreateFormReset((prev) => prev + 1);
+                }}
+            />
 
-            <div className="row g-4">
-                {columnas.map((columna) => (
-                    <div className="col-12 col-lg-4" key={columna.key}>
-                        <div className="card shadow-sm h-100">
-                            <div className="card-header bg-white">
-                                <h5 className="fw-bold m-0">{columna.label}</h5>
-                            </div>
-                            <div className="card-body d-flex flex-column gap-3">
-                                {tickets
-                                    .filter((ticket) => ticket.estado === columna.key)
-                                    .map((ticket) => (
-                                        <div className="card border-0 shadow-sm" key={ticket.id}>
-                                            <div className="card-body">
-                                                <div className="d-flex justify-content-between align-items-start mb-2">
-                                                    <h6 className="fw-bold mb-0">{ticket.titulo}</h6>
-                                                    <span className={`badge ${prioridadClase(ticket.prioridad)}`}>
-                                                        {ticket.prioridad}
-                                                    </span>
-                                                </div>
-                                                <p className="text-muted mb-3">{ticket.descripcion}</p>
-                                                <button
-                                                    className="btn btn-outline-primary btn-sm w-100"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#detalleTicketModal"
-                                                    onClick={() => handleShowTicketDetail(ticket)}
-                                                >
-                                                    Ver detalles del ticket
-                                                </button>
-                                                <div className="d-flex justify-content-between gap-2 mt-3">
-                                                    <button
-                                                        className="btn btn-outline-secondary btn-sm"
-                                                        disabled={!puedeRetroceder(ticket.estado)}
-                                                        onClick={() => handleMoveTicket(ticket, "back")}
-                                                    >
-                                                        Retroceder
-                                                    </button>
-                                                    <button
-                                                        className="btn btn-outline-primary btn-sm"
-                                                        disabled={!puedeAvanzar(ticket.estado)}
-                                                        onClick={() => handleMoveTicket(ticket, "forward")}
-                                                    >
-                                                        Avanzar
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            {ticket.createdAt ? (
-                                                <div className="card-footer bg-white border-top-0">
-                                                    <div className="d-flex align-items-center justify-content-between gap-2">
-                                                        <small className="text-muted">
-                                                            {new Date(ticket.createdAt).toLocaleDateString()}
-                                                        </small>
-                                                        <div className="d-flex gap-2">
-                                                            <button
-                                                                className="btn btn-outline-dark btn-sm"
-                                                                onClick={() => handleSelectTicket(ticket)}
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#editarTicketModal"
-                                                            >
-                                                                Editar
-                                                            </button>
-                                                            <button
-                                                                className="btn btn-outline-danger btn-sm"
-                                                                onClick={() => handleDeleteTicket(ticket.id)}
-                                                            >
-                                                                Borrar
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ) : null}
-                                        </div>
-                                    ))}
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
+            <TicketsBoard
+                columnas={columnas}
+                tickets={tickets}
+                prioridadClase={prioridadClase}
+                puedeRetroceder={puedeRetroceder}
+                puedeAvanzar={puedeAvanzar}
+                onShowTicketDetail={handleShowTicketDetail}
+                onMoveTicket={handleMoveTicket}
+                onSelectTicket={handleSelectTicket}
+                onDeleteTicket={handleDeleteTicket}
+            />
 
             <TicketFormModal
                 modalId="crearTicketModal"
@@ -381,6 +347,16 @@ const ProyectoDetail = () => {
                 assignedName={getUserLabel(detailTicket?.usuario_asignado, detailTicket?.usuario_asignado_id)}
                 creatorName={getUserLabel(detailTicket?.creador_ticket, detailTicket?.creador_id)}
                 errorMessage={detailTicketError}
+            />
+
+            <AssignUserModal
+                modalId="asignarUsuarioModal"
+                closeButtonId="btnCerrarAsignarUsuario"
+                serverError={assignUserError}
+                successMessage={assignUserSuccess}
+                isSubmitting={assignUserLoading}
+                resetSignal={assignUserReset}
+                onSubmit={handleAsignarUsuario}
             />
         </div>
     );
