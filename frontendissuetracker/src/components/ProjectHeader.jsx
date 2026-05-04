@@ -6,11 +6,6 @@ const ProjectHeader = ({ proyecto, esPropietario, onNewTicket, onAssignUser }) =
             <div>
                 <div className="d-flex align-items-center gap-2 mb-2">
                     <h2 className="fw-bold m-0">{proyecto.nombre}</h2>
-                    {esPropietario ? (
-                        <span className="badge bg-primary">Propietario</span>
-                    ) : (
-                        <span className="badge bg-secondary">Invitado</span>
-                    )}
                 </div>
                 <p className="text-muted mb-2">{proyecto.descripcion}</p>
                 <small className="text-muted">

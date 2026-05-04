@@ -128,11 +128,6 @@ const ProyectosList = () => {
                                 <div className="card-body">
                                     <div className="d-flex justify-content-between align-items-start mb-2">
                                         <h5 className="card-title fw-bold m-0">{proyecto.nombre}</h5>
-                                        {proyecto.creador_id === miId || proyecto.creadorId === miId ? (
-                                            <span className="badge bg-primary">Propietario</span>
-                                        ) : (
-                                            <span className="badge bg-secondary">Invitado</span>
-                                        )}
                                     </div>
                                     <p className="card-text text-muted">{proyecto.descripcion}</p>
                                 </div>

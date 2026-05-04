@@ -297,7 +297,7 @@ const ProyectoDetail = () => {
             <ProjectHeader
                 proyecto={proyecto}
                 esPropietario={esPropietario}
-                onAssignUser={esPropietario ? handleOpenAssignUser : null}
+                onAssignUser={handleOpenAssignUser}
                 onNewTicket={() => {
                     setCreateTicketError("");
                     setSelectedTicket(null);
