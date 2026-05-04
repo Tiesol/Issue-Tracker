@@ -8,16 +8,11 @@ const ProyectosList = () => {
     const [selectedProyecto, setSelectedProyecto] = useState(null);
     const [createProjectError, setCreateProjectError] = useState("");
     const [editProjectError, setEditProjectError] = useState("");
+    const [createProjectReset, setCreateProjectReset] = useState(0);
 
     const navigate = useNavigate();
 
     const token = localStorage.getItem("token");
-    let miId = null;
-
-    if (token) {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        miId = payload.id;
-    }
 
     useEffect(() => {
         if (!token) {
@@ -38,12 +33,12 @@ const ProyectosList = () => {
         fetchProyectos();
     }, [token, navigate]);
 
-    const handleCrearProyecto = async (payload) => {
+    const handleCrearProyecto = async (data) => {
         setCreateProjectError("");
         try {
             await axios.post(`${import.meta.env.VITE_API_URL}/proyectos`, {
-                nombre: payload.nombre,
-                descripcion: payload.descripcion
+                nombre: data.nombre,
+                descripcion: data.descripcion
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -68,15 +63,15 @@ const ProyectosList = () => {
         }
     };
 
-    const handleEditarProyecto = async (payload) => {
+    const handleEditarProyecto = async (data) => {
         if (!selectedProyecto) return;
         setEditProjectError("");
         try {
             const response = await axios.put(
                 `${import.meta.env.VITE_API_URL}/proyectos/${selectedProyecto.id}`,
                 {
-                    nombre: payload.nombre,
-                    descripcion: payload.descripcion,
+                    nombre: data.nombre,
+                    descripcion: data.descripcion,
                 },
                 {
                     headers: { Authorization: `Bearer ${token}` }
@@ -98,9 +93,6 @@ const ProyectosList = () => {
             console.error("Error al actualizar proyecto:", error);
         }
     };
-    if (!token) {
-        return null;
-    }
 
     return ( 
         <div className="container mt-5">
@@ -110,7 +102,10 @@ const ProyectosList = () => {
                     className="btn btn-success fw-bold shadow-sm"
                     data-bs-toggle="modal" 
                     data-bs-target="#crearProyectoModal"
-                    onClick={() => setCreateProjectError("")}
+                    onClick={() => {
+                        setCreateProjectError("");
+                        setCreateProjectReset((prev) => prev + 1);
+                    }}
                 >
                     + Nuevo Proyecto
                 </button>
@@ -162,6 +157,7 @@ const ProyectosList = () => {
                 closeButtonId="btnCerrarCrearProyecto"
                 title="Crear Nuevo Proyecto"
                 submitLabel="Guardar Proyecto"
+                resetSignal={createProjectReset}
                 serverError={createProjectError}
                 onSave={handleCrearProyecto}
             />

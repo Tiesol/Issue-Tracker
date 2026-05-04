@@ -17,6 +17,7 @@ const ProyectoDetail = () => {
     const [detailTicketError, setDetailTicketError] = useState("");
     const [createTicketError, setCreateTicketError] = useState("");
     const [editTicketError, setEditTicketError] = useState("");
+    const [moveTicketError, setMoveTicketError] = useState("");
     const [assignUserError, setAssignUserError] = useState("");
     const [assignUserSuccess, setAssignUserSuccess] = useState("");
     const [assignUserLoading, setAssignUserLoading] = useState(false);
@@ -25,12 +26,6 @@ const ProyectoDetail = () => {
     const { id } = useParams();
 
     const token = localStorage.getItem("token");
-    let miId = null;
-
-    if (token) {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        miId = payload.id;
-    }
 
     useEffect(() => {
         if (!token) {
@@ -69,7 +64,7 @@ const ProyectoDetail = () => {
         };
 
         loadData();
-    }, [id, miId, navigate, token]);
+    }, [id, navigate, token]);
 
     const columnas = useMemo(() => {
         return [
@@ -225,6 +220,7 @@ const ProyectoDetail = () => {
     };
 
     const handleMoveTicket = async (ticket, direction) => {
+        setMoveTicketError("");
         const estados = ["pendiente", "en_progreso", "completado"];
         const currentIndex = estados.indexOf(ticket.estado);
         const nextIndex = direction === "forward" ? currentIndex + 1 : currentIndex - 1;
@@ -245,6 +241,11 @@ const ProyectoDetail = () => {
                 handleUnauthorized();
                 return;
             }
+            const message =
+                error.response?.data?.message ||
+                error.response?.data?.error ||
+                "Error al mover ticket";
+            setMoveTicketError(message);
             console.error("Error al mover ticket:", error);
         }
     };
@@ -290,13 +291,10 @@ const ProyectoDetail = () => {
         );
     }
 
-    const esPropietario = proyecto.creador_id === miId || proyecto.creadorId === miId;
-
     return (
         <div className="container mt-5">
             <ProjectHeader
                 proyecto={proyecto}
-                esPropietario={esPropietario}
                 onAssignUser={handleOpenAssignUser}
                 onNewTicket={() => {
                     setCreateTicketError("");
@@ -304,6 +302,18 @@ const ProyectoDetail = () => {
                     setCreateFormReset((prev) => prev + 1);
                 }}
             />
+
+            {assignUserSuccess ? (
+                <div className="alert alert-success" role="alert">
+                    {assignUserSuccess}
+                </div>
+            ) : null}
+
+            {moveTicketError ? (
+                <div className="alert alert-warning" role="alert">
+                    {moveTicketError}
+                </div>
+            ) : null}
 
             <TicketsBoard
                 columnas={columnas}

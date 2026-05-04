@@ -6,6 +6,7 @@ const ProjectFormModal = ({
     title,
     submitLabel,
     initialProyecto,
+    resetSignal,
     serverError,
     onSave,
 }) => {
@@ -21,7 +22,7 @@ const ProjectFormModal = ({
 
         setNombre("");
         setDescripcion("");
-    }, [initialProyecto]);
+    }, [initialProyecto, resetSignal]);
 
     const handleSubmit = async (event) => {
         event.preventDefault();

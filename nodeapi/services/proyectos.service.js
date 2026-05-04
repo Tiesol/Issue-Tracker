@@ -30,7 +30,7 @@ const proyectoService = {
                 }
             ],
             where: {
-                id: id,
+                id,
                 [Op.or]: [
                     { creador_id: userId },
                     { '$miembros.id$': userId }

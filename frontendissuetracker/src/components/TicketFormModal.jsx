@@ -8,6 +8,7 @@ const TicketFormModal = ({
     proyectoId,
     miembros,
     initialTicket,
+    resetSignal,
     serverError,
     onSave,
 }) => {
@@ -41,7 +42,7 @@ const TicketFormModal = ({
         setPrioridad("media");
         setUsuarioAsignadoId("");
         setFormError("");
-    }, [initialTicket]);
+    }, [initialTicket, resetSignal]);
 
     const handleSubmit = async (event) => {
         event.preventDefault();

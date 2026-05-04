@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-const ProjectHeader = ({ proyecto, esPropietario, onNewTicket, onAssignUser }) => {
+const ProjectHeader = ({ proyecto, onNewTicket, onAssignUser }) => {
     return (
         <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start mb-4 gap-3">
             <div>
